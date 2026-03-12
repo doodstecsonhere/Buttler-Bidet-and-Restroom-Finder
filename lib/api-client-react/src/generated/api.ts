@@ -13,7 +13,7 @@ import type {
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type { BidetLocation, HealthStatus } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
 import type { ErrorType } from "../custom-fetch";
@@ -92,6 +92,74 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns all bidet locations in Dumaguete
+ * @summary Get all bidet locations
+ */
+export const getGetBidetsUrl = () => {
+  return `/api/bidets`;
+};
+
+export const getBidets = async (
+  options?: RequestInit,
+): Promise<BidetLocation[]> => {
+  return customFetch<BidetLocation[]>(getGetBidetsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBidetsQueryKey = () => {
+  return [`/api/bidets`] as const;
+};
+
+export const getGetBidetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBidets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getBidets>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBidetsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBidets>>> = ({
+    signal,
+  }) => getBidets({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBidets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBidetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBidets>>
+>;
+export type GetBidetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get all bidet locations
+ */
+
+export function useGetBidets<
+  TData = Awaited<ReturnType<typeof getBidets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getBidets>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBidetsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

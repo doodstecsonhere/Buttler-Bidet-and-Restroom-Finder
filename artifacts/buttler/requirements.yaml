@@ -1,0 +1,15 @@
+packages:
+  "leaflet": "Interactive map core"
+  "react-leaflet": "React bindings for Leaflet"
+  "@types/leaflet": "TypeScript definitions for Leaflet"
+  "framer-motion": "Smooth animations and list interactions"
+
+images:
+  - path: "artifacts/buttler/public/images/logo.png"
+    description: "A playful, modern, clean, minimal 2D vector icon of a smiling water drop wearing a bow tie, flat design, white background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using Leaflet with OpenStreetMap for rendering the interactive map
+  - Implemented Haversine formula for client-side distance calculations
+  - App handles cases where Geolocation is denied by centering on Dumaguete by default

@@ -1,6 +1,5 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: API specification
@@ -10,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: bidets
+    description: Bidet location operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /bidets:
+    get:
+      operationId: getBidets
+      tags: [bidets]
+      summary: Get all bidet locations
+      description: Returns all bidet locations in Dumaguete
+      responses:
+        "200":
+          description: List of bidet locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BidetLocation"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +49,21 @@ components:
           type: string
       required:
         - status
-
+    BidetLocation:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+      required:
+        - id
+        - name
+        - latitude
+        - longitude

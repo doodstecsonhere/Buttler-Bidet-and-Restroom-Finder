@@ -14,3 +14,15 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns all bidet locations in Dumaguete
+ * @summary Get all bidet locations
+ */
+export const GetBidetsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  latitude: zod.number(),
+  longitude: zod.number(),
+});
+export const GetBidetsResponse = zod.array(GetBidetsResponseItem);
