@@ -17,10 +17,20 @@ interface MapProps {
   defaultCenter: [number, number];
 }
 
-// Generate an inline SVG for the bidet marker (Water Drop)
+// Generate an inline SVG for the bidet marker (Bidet icon)
 const bidetSvg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary">
-    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 64 64" fill="none">
+    <ellipse cx="32" cy="40" rx="20" ry="12" fill="#5b9bd5" opacity="0.18"/>
+    <rect x="20" y="36" width="24" height="14" rx="5" fill="#5b9bd5"/>
+    <rect x="26" y="50" width="4" height="5" rx="2" fill="#4a8abf"/>
+    <rect x="34" y="50" width="4" height="5" rx="2" fill="#4a8abf"/>
+    <ellipse cx="32" cy="36" rx="14" ry="8" fill="#7ab4e0"/>
+    <rect x="28" y="20" width="8" height="16" rx="3" fill="#4a8abf"/>
+    <ellipse cx="32" cy="20" rx="5" ry="4" fill="#5b9bd5"/>
+    <path d="M38 24 Q46 20 44 14" stroke="#7ab4e0" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <circle cx="44" cy="13" r="2" fill="#7ab4e0"/>
+    <path d="M40 22 Q50 22 50 16" stroke="#7ab4e0" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    <circle cx="50" cy="15" r="1.5" fill="#7ab4e0"/>
   </svg>
 `;
 

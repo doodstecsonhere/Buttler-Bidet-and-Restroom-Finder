@@ -62,7 +62,7 @@ export default function Home() {
             <h1 className="font-display font-bold text-2xl text-foreground">Buttler</h1>
             <p className="text-primary font-medium text-sm flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              Nearest Clean Rear
+              Bidet Finder
             </p>
           </div>
         </div>
