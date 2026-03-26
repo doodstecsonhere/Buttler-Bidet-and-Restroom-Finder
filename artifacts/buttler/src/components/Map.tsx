@@ -17,29 +17,12 @@ interface MapProps {
   defaultCenter: [number, number];
 }
 
-// Generate an inline SVG for the bidet marker (Bidet icon)
-const bidetSvg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 64 64" fill="none">
-    <ellipse cx="32" cy="40" rx="20" ry="12" fill="#5b9bd5" opacity="0.18"/>
-    <rect x="20" y="36" width="24" height="14" rx="5" fill="#5b9bd5"/>
-    <rect x="26" y="50" width="4" height="5" rx="2" fill="#4a8abf"/>
-    <rect x="34" y="50" width="4" height="5" rx="2" fill="#4a8abf"/>
-    <ellipse cx="32" cy="36" rx="14" ry="8" fill="#7ab4e0"/>
-    <rect x="28" y="20" width="8" height="16" rx="3" fill="#4a8abf"/>
-    <ellipse cx="32" cy="20" rx="5" ry="4" fill="#5b9bd5"/>
-    <path d="M38 24 Q46 20 44 14" stroke="#7ab4e0" stroke-width="2" stroke-linecap="round" fill="none"/>
-    <circle cx="44" cy="13" r="2" fill="#7ab4e0"/>
-    <path d="M40 22 Q50 22 50 16" stroke="#7ab4e0" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-    <circle cx="50" cy="15" r="1.5" fill="#7ab4e0"/>
-  </svg>
-`;
-
 const bidetIcon = L.divIcon({
   className: 'bg-transparent border-none',
-  html: `<div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-primary transition-transform hover:scale-110">${bidetSvg}</div>`,
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
-  popupAnchor: [0, -40],
+  html: `<div style="width:44px;height:44px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.22);border:2px solid #5b9bd5;overflow:hidden;"><img src="${import.meta.env.BASE_URL}images/bidet-marker.png" style="width:32px;height:32px;object-fit:contain;" /></div>`,
+  iconSize: [44, 44],
+  iconAnchor: [22, 44],
+  popupAnchor: [0, -44],
 });
 
 // Generate an inline SVG for the user marker (Solid Dot with Ping)
