@@ -17,12 +17,23 @@ interface MapProps {
   defaultCenter: [number, number];
 }
 
+const sprSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M6 7h4a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2 2 2 0 0 1 2-2z"/>
+  <path d="M10 9h2"/>
+  <path d="M12 9c1.5 0 2.5 1 2.5 2.5S13.5 14 12 14H9"/>
+  <path d="M9 14v3a1 1 0 0 0 1 1h1"/>
+  <path d="M11 18h2"/>
+  <circle cx="14" cy="18" r="1" fill="#2563eb" stroke="none"/>
+  <path d="M5 8H3"/>
+  <path d="M3 6l1 2-1 2"/>
+</svg>`;
+
 const bidetIcon = L.divIcon({
   className: 'bg-transparent border-none',
-  html: `<div style="width:44px;height:44px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.22);border:2px solid #5b9bd5;overflow:hidden;"><img src="${import.meta.env.BASE_URL}images/bidet-marker.png" style="width:32px;height:32px;object-fit:contain;" /></div>`,
-  iconSize: [44, 44],
-  iconAnchor: [22, 44],
-  popupAnchor: [0, -44],
+  html: `<div style="width:38px;height:38px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.20);border:2.5px solid #2563eb;">${sprSvg}</div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+  popupAnchor: [0, -38],
 });
 
 // Generate an inline SVG for the user marker (Solid Dot with Ping)
