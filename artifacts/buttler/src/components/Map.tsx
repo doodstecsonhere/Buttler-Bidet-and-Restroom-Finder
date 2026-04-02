@@ -17,11 +17,11 @@ interface MapProps {
   defaultCenter: [number, number];
 }
 
-const dropSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#2563eb" stroke="none"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
+const dropSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#38bdf8" stroke="none"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
 
 const bidetIcon = L.divIcon({
   className: 'bg-transparent border-none',
-  html: `<div style="width:38px;height:38px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.20);border:2.5px solid #2563eb;">${dropSvg}</div>`,
+  html: `<div style="width:38px;height:38px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.20);border:2.5px solid #38bdf8;">${dropSvg}</div>`,
   iconSize: [38, 38],
   iconAnchor: [19, 38],
   popupAnchor: [0, -38],
