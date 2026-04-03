@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { Location } from '@/hooks/use-geolocation';
@@ -47,25 +47,27 @@ const userIcon = L.divIcon({
   popupAnchor: [0, -16],
 });
 
-// Component to handle auto-fitting bounds when data or location changes
+// Fits the map once when bidet data first arrives, then never again.
+// A ref gates the effect so manual zoom/pan by the user is never overridden.
 function MapBounds({ bidets, userLocation, defaultCenter }: MapProps) {
   const map = useMap();
+  const hasFit = useRef(false);
 
   useEffect(() => {
+    if (hasFit.current) return; // already fitted — respect user interactions
+
     if (!bidets || bidets.length === 0) {
-      if (userLocation) {
-        map.setView([userLocation.lat, userLocation.lng], 15);
-      } else {
-        map.setView(defaultCenter, 14);
-      }
+      // Bidet data not yet loaded; set a sensible default view but don't lock it
+      map.setView(defaultCenter, 14);
       return;
     }
 
+    // First time we have bidet data — fit once and lock
+    hasFit.current = true;
     const bounds = L.latLngBounds(bidets.map(b => [b.latitude, b.longitude]));
     if (userLocation) {
       bounds.extend([userLocation.lat, userLocation.lng]);
     }
-    
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
   }, [bidets, userLocation, map, defaultCenter]);
 
