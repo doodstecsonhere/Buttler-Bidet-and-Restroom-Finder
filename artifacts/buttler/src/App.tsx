@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
+import { InstallBanner } from "@/components/InstallBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ function App() {
           <Router />
         </WouterRouter>
         <Toaster />
+        <InstallBanner />
       </TooltipProvider>
     </QueryClientProvider>
   );
