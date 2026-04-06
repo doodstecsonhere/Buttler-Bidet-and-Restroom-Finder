@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BidetLocation {
+export interface RestroomLocation {
   id: number;
   name: string;
   latitude: number;
   longitude: number;
+  /** @nullable */
+  address: string | null;
+  access: string;
+  fee: string;
+  bidet: boolean;
 }

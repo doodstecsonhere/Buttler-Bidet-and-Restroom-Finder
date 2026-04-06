@@ -1,0 +1,19 @@
+"Update my existing PWA from 'Buttler: Bidet Finder' to 'Buttler: Bidet & Restroom Finder'. Execute these updates sequentially:
+1. Data Overhaul & Map Logic: > - Load the new Dumaguete Comprehensive Restroom Data.csv (Columns: Name, Latitude, Longitude, Address, Access, Fee, Bidet, Source).
+Map Pins: Color restrooms Gold if Bidet = 'yes'. Color them Blue Gray if Bidet = 'no'.
+ONLY center and fit bounds on the initial load. Respect manual zoom/pan. Add an OSM attribution text at the bottom.
+2. Explicit Search & Filter UI:
+Add a text search bar at the top to filter visible map pins by Name or Address.
+Add two toggle buttons below the search bar: Toggle A: 'Bidets Only' (Hides pins where Bidet = 'no'). Toggle B: 'Public Only' (Hides pins where Access = 'customers').
+3. Auth-Gated 'Guardian Audit' Button:
+In every map marker's detail popup, add an 'Audit this Restroom' button. This must ONLY be visible to users logged in via Replit Auth.
+4. The Restroom Detail & Audit Form:
+In every map marker's detail popup, prominently display the Access status (e.g., 'Public' or 'Customer-Only') and the Fee status (e.g., 'Fee: no' or 'Fee: yes/amount') pulled from the CSV directly below the restroom Name.
+Below the details, add the 'Audit this Restroom' button (ONLY visible to users logged in via Replit Auth).
+When clicked, open a modal with 5 checkboxes: 1. PWD Accessible Stall, 2. Soap, 3. Toilet Seat, 4. Tissue, 5. Functional Bidet. Add an optional 'Remarks' text area and a Submit button.
+Gatekeeper Logic: The form MUST recognize 'PWD Accessible Stall' as the primary validator. If PWD access is false, tag the submission in the database as 'Tier 0'.
+5. SQLite Database (Free Plan Optimized):
+Create a lightweight SQLite/Replit DB table logging: user_id, restroom_name, latitude, longitude, the 5 boolean checkboxes, remarks, tier_status, and timestamp.
+6. Dynamic UI Badges (The Verification Loop):
+In the marker detail view, if the DB contains at least one audit for that specific restroom, display a green 'Verified by Guardian' badge. If not, display a gray 'Unverified/Community Data' badge.
+Update the map marker icon with a small checkmark if it has been audited, prioritizing visual mapping of unverified locations."

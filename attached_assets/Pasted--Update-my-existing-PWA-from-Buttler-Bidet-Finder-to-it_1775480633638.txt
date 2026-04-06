@@ -1,0 +1,31 @@
+"Update my existing PWA from 'Buttler: Bidet Finder' to its final evolution: 'Buttler: Bidet & Restroom Finder'. Please perform the following structural and feature updates:
+
+1. Brand & UI Update: Change the app title, manifest name, and main UI headers to 'Buttler: Bidet & Restroom Finder'.
+
+2. Data Overhaul: I have uploaded a new dataset: Dumaguete Comprehensive Restroom Data.csv. Replace the old static data with this file. Parse the columns: Name, Latitude, Longitude, Address, Access, Fee, Bidet, Source. Add a search bar with filtering and sorting capabilities. Make sure OSM data is properly attributed.
+
+3. Map Marker Logic: Differentiate the map pins visually based on the Bidet column. Use a prominent color (i.e., Gold) for restrooms where Bidet = 'yes', and a muted color (i.e., Blue Gray) for regular restrooms where Bidet = 'no'. Maintain the existing map behavior: ONLY center and fit bounds on the initial load; respect the user's manual zoom/pan after that.
+
+4. Auth-Gated Feature - 'The Guardian Audit': In the popup or detail view of every map marker, add an 'Audit this Restroom' button. This button must only be visible/clickable if the user is logged in via Replit Auth.
+
+5. The Audit Form UI: When a logged-in user clicks 'Audit this Restroom', open a clean, mobile-friendly modal or form containing:
+
+    The 5-Tier Checklist (Checkboxes): 1. PWD Accessible Stall, 2. Soap, 3. Toilet Seat, 4. Tissue, 5. Functional Bidet.
+
+    Remarks: An optional text area labeled 'Remarks (Optional)' for the user to add notes (e.g., 'door lock broken' or 'water pressure low').
+
+    Submit Button.
+
+6. Lightweight Database (Free Plan Optimized): Since I am on the free plan, use a simple SQLite database (or Replit DB) to store these audit submissions. Create a table that logs: user_id, restroom_name, latitude, longitude, the boolean values of the 5 checkboxes, the remarks string, and a timestamp.
+
+Ensure the PWA remains high-performance and lightweight.
+
+If 'PWD Accessible Stall' is NOT checked during an audit, the facility cannot be flagged as 'Level 5/Gold' regardless of bidet status.
+
+Add a toggle filter to the search bar to show 'Public Only' versus 'Customer/Restricted' facilities.
+
+In the restroom detail view, display a 'Verified by Guardian' badge if there is at least one entry for that restroom in the SQLite audit table. Otherwise, label it as 'Unverified/Community Data'.
+
+Ensure the Remarks field is captured and indexed so we can later export reports on common issues (e.g., 'no water' or 'broken locks').
+
+Audit Logic Update: Ensure that the form logic recognizes the 'PWD Accessible' checkbox as the primary validator. If PWD access is false, the facility should be visually flagged in the DB as 'Inaccessible/Tier 0' for reporting purposes. Also, once a restroom is audited, update its map marker with a 'Verified' checkmark icon to encourage Guardians to map the 'Invisible' unverified locations first.”

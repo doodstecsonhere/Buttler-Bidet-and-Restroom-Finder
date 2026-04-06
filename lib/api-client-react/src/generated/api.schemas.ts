@@ -9,11 +9,55 @@ export interface HealthStatus {
   status: string;
 }
 
-export interface BidetLocation {
+export interface RestroomLocation {
   id: number;
   name: string;
   latitude: number;
   longitude: number;
+  /** @nullable */
+  address: string | null;
+  access: string;
+  fee: string;
+  bidet: boolean;
+}
+
+export interface CreateAuditBody {
+  restroomId: number;
+  restroomName: string;
+  latitude: string;
+  longitude: string;
+  pwdAccessible: boolean;
+  hasSoap: boolean;
+  hasToiletSeat: boolean;
+  hasTissue: boolean;
+  hasFunctionalBidet: boolean;
+  /** @nullable */
+  remarks?: string | null;
+}
+
+export interface AuditRecord {
+  id: number;
+  userId: string;
+  restroomId: number;
+  restroomName: string;
+  latitude: string;
+  longitude: string;
+  pwdAccessible: boolean;
+  hasSoap: boolean;
+  hasToiletSeat: boolean;
+  hasTissue: boolean;
+  hasFunctionalBidet: boolean;
+  /** @nullable */
+  remarks?: string | null;
+  tierStatus: string;
+  createdAt: string;
+}
+
+export interface AuditSummaryMap {
+  [key: string]: {
+    count: number;
+    audits: AuditRecord[];
+  };
 }
 
 export interface AuthUser {
@@ -64,9 +108,6 @@ export interface ErrorEnvelope {
 export type AuthorizationSessionHeaderParameter = string;
 
 export type BeginBrowserLoginParams = {
-  /**
-   * Relative path to redirect to after login (must start with `/`). Defaults to `/`.
-   */
   returnTo?: string;
 };
 

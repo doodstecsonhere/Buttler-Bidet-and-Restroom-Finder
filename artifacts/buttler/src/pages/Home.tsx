@@ -1,62 +1,94 @@
-import { useMemo } from "react";
-import { useGetBidets } from "@workspace/api-client-react";
+import { useMemo, useState, useCallback } from "react";
+import { useGetRestrooms, useGetAudits } from "@workspace/api-client-react";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { calculateDistance } from "@/lib/distance";
 import { Map } from "@/components/Map";
-import { BidetCard } from "@/components/BidetCard";
-import { MapPinOff, Loader2, Sparkles, LogIn, LogOut, User } from "lucide-react";
+import type { Restroom } from "@/components/Map";
+import { RestroomCard } from "@/components/RestroomCard";
+import { AuditModal } from "@/components/AuditModal";
+import { MapPinOff, Loader2, Sparkles, Search, Droplets, Users, LogIn, LogOut, User, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useQueryClient } from "@tanstack/react-query";
 
-// Default to Dumaguete City center if geolocation fails
 const DUMAGUETE_CENTER: [number, number] = [9.317, 123.305];
 
 export default function Home() {
-  const { data: bidets, isLoading: bidetsLoading, error: bidetsError } = useGetBidets();
+  const { data: restrooms, isLoading: restroomsLoading, error: restroomsError } = useGetRestrooms();
+  const { data: auditsMap, queryKey: auditsQueryKey } = useGetAudits();
   const { location, loading: geoLoading, error: geoError } = useGeolocation();
   const { user, isAuthenticated, login, logout } = useAuth();
+  const queryClient = useQueryClient();
 
-  const sortedBidets = useMemo(() => {
-    if (!bidets) return [];
-    
-    // If no location, return unsorted bidets
-    if (!location) return bidets;
+  const [search, setSearch] = useState("");
+  const [bidetsOnly, setBidetsOnly] = useState(false);
+  const [publicOnly, setPublicOnly] = useState(false);
+  const [auditTarget, setAuditTarget] = useState<Restroom | null>(null);
 
-    // Calculate distance and sort
-    return [...bidets]
-      .map(bidet => ({
-        ...bidet,
-        distance: calculateDistance(location.lat, location.lng, bidet.latitude, bidet.longitude)
+  const auditedIds = useMemo(() => {
+    if (!auditsMap) return new Set<number>();
+    return new Set<number>(Object.keys(auditsMap).map(Number));
+  }, [auditsMap]);
+
+  const sortedRestrooms = useMemo(() => {
+    if (!restrooms) return [];
+    return [...restrooms]
+      .map((r) => ({
+        ...r,
+        distance: location
+          ? calculateDistance(location.lat, location.lng, r.latitude, r.longitude)
+          : undefined,
       }))
-      .sort((a, b) => (a.distance || 0) - (b.distance || 0));
-  }, [bidets, location]);
+      .sort((a, b) => {
+        if (a.distance !== undefined && b.distance !== undefined) return a.distance - b.distance;
+        return 0;
+      });
+  }, [restrooms, location]);
 
-  const isGlobalLoading = bidetsLoading || geoLoading;
+  const filteredRestrooms = useMemo(() => {
+    let result = sortedRestrooms;
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          (r.address && r.address.toLowerCase().includes(q))
+      );
+    }
+    if (bidetsOnly) result = result.filter((r) => r.bidet);
+    if (publicOnly) result = result.filter((r) => r.access === "public" || r.access.includes("public"));
+    return result;
+  }, [sortedRestrooms, search, bidetsOnly, publicOnly]);
+
+  const isGlobalLoading = restroomsLoading;
+
+  const handleAuditClick = useCallback((restroom: Restroom) => {
+    setAuditTarget(restroom);
+  }, []);
+
+  const handleAuditSuccess = useCallback(() => {
+    if (auditsQueryKey) {
+      queryClient.invalidateQueries({ queryKey: auditsQueryKey });
+    }
+  }, [queryClient, auditsQueryKey]);
 
   return (
     <div className="flex flex-col md:flex-row min-h-[100dvh] w-full bg-background overflow-hidden">
       {/* Mobile Header overlay on map */}
-      <div className="md:hidden absolute top-0 left-0 w-full z-10 pointer-events-none p-4">
-        <div className="bg-white/80 backdrop-blur-md border border-white/40 shadow-lg rounded-2xl p-4 flex items-center gap-3 pointer-events-auto">
-          <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Buttler Logo" className="w-10 h-10 rounded-xl" />
-          <div className="flex-1">
-            <h1 className="font-display font-bold text-xl text-foreground leading-none">Buttler</h1>
-            <p className="text-primary font-medium text-xs tracking-wide uppercase">Bidet Finder</p>
+      <div className="md:hidden absolute top-0 left-0 w-full z-10 pointer-events-none p-3">
+        <div className="bg-white/85 backdrop-blur-md border border-white/40 shadow-lg rounded-2xl p-3 flex items-center gap-2.5 pointer-events-auto">
+          <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Buttler Logo" className="w-9 h-9 rounded-xl flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h1 className="font-display font-bold text-base text-foreground leading-none">Buttler</h1>
+            <p className="text-primary font-medium text-[10px] tracking-wide uppercase truncate">Bidet & Restroom Finder</p>
           </div>
           {isAuthenticated ? (
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-xl hover:bg-white/80"
-            >
+            <button onClick={logout} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-xl hover:bg-white/80 flex-shrink-0">
               <User className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline max-w-[80px] truncate">{user?.firstName ?? "Account"}</span>
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3 h-3" />
             </button>
           ) : (
-            <button
-              onClick={login}
-              className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20"
-            >
+            <button onClick={login} className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors px-2 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 flex-shrink-0">
               <LogIn className="w-3.5 h-3.5" />
               Log in
             </button>
@@ -66,110 +98,152 @@ export default function Home() {
 
       {/* Map Section */}
       <div className="h-[45vh] md:h-screen w-full md:flex-1 relative order-1 md:order-2 bg-muted/50 border-b md:border-b-0 md:border-l border-border z-0">
-        <Map 
-          bidets={sortedBidets} 
-          userLocation={location} 
-          defaultCenter={DUMAGUETE_CENTER} 
+        <Map
+          restrooms={filteredRestrooms}
+          userLocation={location}
+          defaultCenter={DUMAGUETE_CENTER}
+          auditedIds={auditedIds}
+          isAuthenticated={isAuthenticated}
+          onAuditClick={handleAuditClick}
         />
       </div>
 
-      {/* Sidebar / List Section */}
+      {/* Sidebar */}
       <div className="flex-1 md:flex-none md:w-[420px] lg:w-[480px] h-[55vh] md:h-screen flex flex-col order-2 md:order-1 bg-background z-10 shadow-2xl md:shadow-none">
         {/* Desktop Header */}
-        <div className="hidden md:flex items-center gap-4 p-6 border-b border-border/60 bg-card">
-          <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Buttler Logo" className="w-12 h-12 rounded-xl shadow-sm" />
+        <div className="hidden md:flex items-center gap-3 p-5 border-b border-border/60 bg-card">
+          <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Buttler Logo" className="w-11 h-11 rounded-xl shadow-sm" />
           <div className="flex-1">
-            <h1 className="font-display font-bold text-2xl text-foreground">Buttler</h1>
-            <p className="text-primary font-medium text-sm flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              Bidet Finder
+            <h1 className="font-display font-bold text-xl text-foreground">Buttler</h1>
+            <p className="text-primary font-medium text-xs flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              Bidet & Restroom Finder
             </p>
           </div>
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               {user?.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                <img src={user.profileImageUrl} alt="Profile" className="w-7 h-7 rounded-full object-cover" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-primary" />
                 </div>
               )}
-              <div className="text-sm">
-                <p className="font-medium text-foreground leading-none">{user?.firstName ?? "User"}</p>
-              </div>
-              <button
-                onClick={logout}
-                className="ml-1 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-xl hover:bg-muted"
-              >
-                <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium text-foreground">{user?.firstName ?? "User"}</span>
+              <button onClick={logout} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-xl hover:bg-muted">
+                <LogOut className="w-3.5 h-3.5" />
                 Log out
               </button>
             </div>
           ) : (
-            <button
-              onClick={login}
-              className="flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors px-4 py-2 rounded-xl shadow-sm"
-            >
-              <LogIn className="w-4 h-4" />
+            <button onClick={login} className="flex items-center gap-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary/90 transition-colors px-3 py-2 rounded-xl shadow-sm">
+              <LogIn className="w-3.5 h-3.5" />
               Log in
             </button>
           )}
         </div>
 
-        {/* List Header */}
-        <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between bg-background/95 backdrop-blur z-10 sticky top-0">
-          <h2 className="font-display font-semibold text-lg text-foreground">
-            {location ? "Nearest to you" : "All Locations"}
+        {/* Search + Filters */}
+        <div className="px-4 pt-3 pb-2 border-b border-border/40 bg-background/95 backdrop-blur space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or address..."
+              className="w-full pl-9 pr-8 py-2 text-sm bg-muted/60 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setBidetsOnly((v) => !v)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${bidetsOnly ? "bg-amber-500 border-amber-500 text-white shadow-sm" : "bg-muted/60 border-border/50 text-muted-foreground hover:border-amber-400 hover:text-amber-600"}`}
+            >
+              <Droplets className="w-3.5 h-3.5" />
+              Bidets Only
+            </button>
+            <button
+              onClick={() => setPublicOnly((v) => !v)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${publicOnly ? "bg-green-600 border-green-600 text-white shadow-sm" : "bg-muted/60 border-border/50 text-muted-foreground hover:border-green-500 hover:text-green-600"}`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              Public Only
+            </button>
+          </div>
+        </div>
+
+        {/* List header */}
+        <div className="px-4 py-2.5 flex items-center justify-between bg-background/95 backdrop-blur">
+          <h2 className="font-display font-semibold text-base text-foreground">
+            {location ? "Nearest to you" : "All Restrooms"}
           </h2>
           <span className="text-xs font-bold px-2.5 py-1 bg-secondary/10 text-secondary rounded-full">
-            {sortedBidets.length} found
+            {filteredRestrooms.length} found
           </span>
         </div>
 
-        {/* Scrollable List */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
+        {/* Scrollable list */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
           {geoError && !location && (
-            <div className="p-4 bg-accent/10 border border-accent/20 rounded-2xl flex gap-3 text-sm text-foreground/80">
-              <MapPinOff className="w-5 h-5 text-accent shrink-0" />
-              <p>We couldn't get your location. Showing all bidets in Dumaguete instead.</p>
+            <div className="p-3 bg-accent/10 border border-accent/20 rounded-2xl flex gap-3 text-sm text-foreground/80">
+              <MapPinOff className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+              <p>Couldn't get your location. Showing all restrooms instead.</p>
             </div>
           )}
 
           {isGlobalLoading ? (
-            <div className="flex flex-col items-center justify-center h-48 space-y-4 text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="font-medium animate-pulse">Finding relief...</p>
+            <div className="flex flex-col items-center justify-center h-40 space-y-3 text-muted-foreground">
+              <Loader2 className="w-7 h-7 animate-spin text-primary" />
+              <p className="font-medium animate-pulse text-sm">Finding relief...</p>
             </div>
-          ) : bidetsError ? (
-            <div className="p-6 text-center bg-destructive/10 rounded-2xl border border-destructive/20">
-              <p className="text-destructive font-semibold">Failed to load bidet locations.</p>
-              <p className="text-sm mt-1 text-destructive/80">Please check your connection and try again.</p>
+          ) : restroomsError ? (
+            <div className="p-5 text-center bg-destructive/10 rounded-2xl border border-destructive/20">
+              <p className="text-destructive font-semibold text-sm">Failed to load restroom locations.</p>
+              <p className="text-xs mt-1 text-destructive/80">Please check your connection and try again.</p>
             </div>
-          ) : sortedBidets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center px-6">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <MapPinOff className="w-8 h-8 text-muted-foreground/50" />
+          ) : filteredRestrooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 text-center px-6">
+              <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
+                <MapPinOff className="w-7 h-7 text-muted-foreground/50" />
               </div>
-              <h3 className="font-display font-bold text-lg text-foreground">No bidets found</h3>
-              <p className="text-muted-foreground text-sm mt-1">Looks like you're on your own out here!</p>
+              <h3 className="font-display font-bold text-base text-foreground">No results</h3>
+              <p className="text-muted-foreground text-sm mt-1">Try adjusting your search or filters.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 pb-8">
-              {sortedBidets.map((bidet, idx) => (
-                <BidetCard 
-                  key={bidet.id}
-                  id={bidet.id}
-                  name={bidet.name}
-                  latitude={bidet.latitude}
-                  longitude={bidet.longitude}
-                  distance={bidet.distance}
-                  index={idx}
-                />
-              ))}
-            </div>
+            filteredRestrooms.map((restroom, idx) => (
+              <RestroomCard
+                key={restroom.id}
+                id={restroom.id}
+                name={restroom.name}
+                latitude={restroom.latitude}
+                longitude={restroom.longitude}
+                address={restroom.address ?? null}
+                access={restroom.access}
+                fee={restroom.fee}
+                bidet={restroom.bidet}
+                distance={restroom.distance}
+                index={idx}
+                audited={auditedIds.has(restroom.id)}
+              />
+            ))
           )}
         </div>
       </div>
+
+      {/* Audit Modal */}
+      {auditTarget && (
+        <AuditModal
+          restroom={auditTarget}
+          onClose={() => setAuditTarget(null)}
+          onSuccess={handleAuditSuccess}
+        />
+      )}
     </div>
   );
 }

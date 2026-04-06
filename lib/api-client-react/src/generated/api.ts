@@ -17,15 +17,18 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AuditRecord,
+  AuditSummaryMap,
   AuthUserEnvelope,
   BeginBrowserLoginParams,
-  BidetLocation,
+  CreateAuditBody,
   ErrorEnvelope,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   LogoutSuccess,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  RestroomLocation,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -114,65 +117,73 @@ export function useHealthCheck<
 }
 
 /**
- * Returns all bidet locations in Dumaguete
- * @summary Get all bidet locations
+ * Returns all restroom locations in Dumaguete
+ * @summary Get all restroom locations
  */
-export const getGetBidetsUrl = () => {
-  return `/api/bidets`;
+export const getGetRestroomsUrl = () => {
+  return `/api/restrooms`;
 };
 
-export const getBidets = async (
+export const getRestrooms = async (
   options?: RequestInit,
-): Promise<BidetLocation[]> => {
-  return customFetch<BidetLocation[]>(getGetBidetsUrl(), {
+): Promise<RestroomLocation[]> => {
+  return customFetch<RestroomLocation[]>(getGetRestroomsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetBidetsQueryKey = () => {
-  return [`/api/bidets`] as const;
+export const getGetRestroomsQueryKey = () => {
+  return [`/api/restrooms`] as const;
 };
 
-export const getGetBidetsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getBidets>>,
+export const getGetRestroomsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRestrooms>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getBidets>>, TError, TData>;
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRestrooms>>,
+    TError,
+    TData
+  >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetBidetsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetRestroomsQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBidets>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRestrooms>>> = ({
     signal,
-  }) => getBidets({ signal, ...requestOptions });
+  }) => getRestrooms({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getBidets>>,
+    Awaited<ReturnType<typeof getRestrooms>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type GetBidetsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getBidets>>
+export type GetRestroomsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRestrooms>>
 >;
-export type GetBidetsQueryError = ErrorType<unknown>;
+export type GetRestroomsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get all bidet locations
+ * @summary Get all restroom locations
  */
 
-export function useGetBidets<
-  TData = Awaited<ReturnType<typeof getBidets>>,
+export function useGetRestrooms<
+  TData = Awaited<ReturnType<typeof getRestrooms>>,
   TError = ErrorType<unknown>,
 >(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof getBidets>>, TError, TData>;
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRestrooms>>,
+    TError,
+    TData
+  >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetBidetsQueryOptions(options);
+  const queryOptions = getGetRestroomsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -180,6 +191,160 @@ export function useGetBidets<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Returns all audits grouped by restroom
+ * @summary Get all restroom audits
+ */
+export const getGetAuditsUrl = () => {
+  return `/api/audits`;
+};
+
+export const getAudits = async (
+  options?: RequestInit,
+): Promise<AuditSummaryMap> => {
+  return customFetch<AuditSummaryMap>(getGetAuditsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAuditsQueryKey = () => {
+  return [`/api/audits`] as const;
+};
+
+export const getGetAuditsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAudits>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getAudits>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAuditsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAudits>>> = ({
+    signal,
+  }) => getAudits({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAudits>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAuditsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAudits>>
+>;
+export type GetAuditsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get all restroom audits
+ */
+
+export function useGetAudits<
+  TData = Awaited<ReturnType<typeof getAudits>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getAudits>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAuditsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a Guardian Audit
+ */
+export const getCreateAuditUrl = () => {
+  return `/api/audits`;
+};
+
+export const createAudit = async (
+  createAuditBody: CreateAuditBody,
+  options?: RequestInit,
+): Promise<AuditRecord> => {
+  return customFetch<AuditRecord>(getCreateAuditUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAuditBody),
+  });
+};
+
+export const getCreateAuditMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAudit>>,
+    TError,
+    { data: BodyType<CreateAuditBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAudit>>,
+  TError,
+  { data: BodyType<CreateAuditBody> },
+  TContext
+> => {
+  const mutationKey = ["createAudit"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAudit>>,
+    { data: BodyType<CreateAuditBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAudit(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAuditMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAudit>>
+>;
+export type CreateAuditMutationBody = BodyType<CreateAuditBody>;
+export type CreateAuditMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Submit a Guardian Audit
+ */
+export const useCreateAudit = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAudit>>,
+    TError,
+    { data: BodyType<CreateAuditBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAudit>>,
+  TError,
+  { data: BodyType<CreateAuditBody> },
+  TContext
+> => {
+  return useMutation(getCreateAuditMutationOptions(options));
+};
 
 /**
  * @summary Get the currently authenticated user

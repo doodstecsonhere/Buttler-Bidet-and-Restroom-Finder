@@ -16,16 +16,65 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * Returns all bidet locations in Dumaguete
- * @summary Get all bidet locations
+ * Returns all restroom locations in Dumaguete
+ * @summary Get all restroom locations
  */
-export const GetBidetsResponseItem = zod.object({
+export const GetRestroomsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
   latitude: zod.number(),
   longitude: zod.number(),
+  address: zod.string().nullable(),
+  access: zod.string(),
+  fee: zod.string(),
+  bidet: zod.boolean(),
 });
-export const GetBidetsResponse = zod.array(GetBidetsResponseItem);
+export const GetRestroomsResponse = zod.array(GetRestroomsResponseItem);
+
+/**
+ * Returns all audits grouped by restroom
+ * @summary Get all restroom audits
+ */
+export const GetAuditsResponse = zod.record(
+  zod.string(),
+  zod.object({
+    count: zod.number(),
+    audits: zod.array(
+      zod.object({
+        id: zod.number(),
+        userId: zod.string(),
+        restroomId: zod.number(),
+        restroomName: zod.string(),
+        latitude: zod.string(),
+        longitude: zod.string(),
+        pwdAccessible: zod.boolean(),
+        hasSoap: zod.boolean(),
+        hasToiletSeat: zod.boolean(),
+        hasTissue: zod.boolean(),
+        hasFunctionalBidet: zod.boolean(),
+        remarks: zod.string().nullish(),
+        tierStatus: zod.string(),
+        createdAt: zod.date(),
+      }),
+    ),
+  }),
+);
+
+/**
+ * @summary Submit a Guardian Audit
+ */
+export const CreateAuditBody = zod.object({
+  restroomId: zod.number(),
+  restroomName: zod.string(),
+  latitude: zod.string(),
+  longitude: zod.string(),
+  pwdAccessible: zod.boolean(),
+  hasSoap: zod.boolean(),
+  hasToiletSeat: zod.boolean(),
+  hasTissue: zod.boolean(),
+  hasFunctionalBidet: zod.boolean(),
+  remarks: zod.string().nullish(),
+});
 
 /**
  * @summary Get the currently authenticated user
@@ -54,12 +103,7 @@ export const GetCurrentAuthUserResponse = zod.object({
  * @summary Start the browser OIDC login flow
  */
 export const BeginBrowserLoginQueryParams = zod.object({
-  returnTo: zod.coerce
-    .string()
-    .optional()
-    .describe(
-      "Relative path to redirect to after login (must start with `\/`). Defaults to `\/`.",
-    ),
+  returnTo: zod.coerce.string().optional(),
 });
 
 /**

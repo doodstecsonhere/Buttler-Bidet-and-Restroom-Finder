@@ -9,8 +9,10 @@ servers:
 tags:
   - name: health
     description: Health operations
-  - name: bidets
-    description: Bidet location operations
+  - name: restrooms
+    description: Restroom location operations
+  - name: audits
+    description: Guardian Audit operations
   - name: Auth
     description: Browser and mobile authentication endpoints.
 paths:
@@ -27,21 +29,57 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-  /bidets:
+  /restrooms:
     get:
-      operationId: getBidets
-      tags: [bidets]
-      summary: Get all bidet locations
-      description: Returns all bidet locations in Dumaguete
+      operationId: getRestrooms
+      tags: [restrooms]
+      summary: Get all restroom locations
+      description: Returns all restroom locations in Dumaguete
       responses:
         "200":
-          description: List of bidet locations
+          description: List of restroom locations
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/BidetLocation"
+                  $ref: "#/components/schemas/RestroomLocation"
+  /audits:
+    get:
+      operationId: getAudits
+      tags: [audits]
+      summary: Get all restroom audits
+      description: Returns all audits grouped by restroom
+      responses:
+        "200":
+          description: Map of restroomId to audit count and audit list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditSummaryMap"
+    post:
+      operationId: createAudit
+      tags: [audits]
+      summary: Submit a Guardian Audit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAuditBody"
+      responses:
+        "201":
+          description: Audit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditRecord"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /auth/user:
     get:
       tags: [Auth]
@@ -66,7 +104,6 @@ paths:
         - name: returnTo
           in: query
           required: false
-          description: Relative path to redirect to after login (must start with `/`). Defaults to `/`.
           schema:
             type: string
       responses:
@@ -96,7 +133,7 @@ paths:
             format: uri
       responses:
         '302':
-          description: Redirect to the `returnTo` path on success (defaults to `/`) or `/api/login` on failure.
+          description: Redirect to the returnTo path on success or /api/login on failure.
   /logout:
     get:
       tags: [Auth]
@@ -182,7 +219,7 @@ components:
           type: string
       required:
         - status
-    BidetLocation:
+    RestroomLocation:
       type: object
       properties:
         id:
@@ -195,11 +232,92 @@ components:
         longitude:
           type: number
           format: double
+        address:
+          type: [string, 'null']
+        access:
+          type: string
+        fee:
+          type: string
+        bidet:
+          type: boolean
       required:
         - id
         - name
         - latitude
         - longitude
+        - address
+        - access
+        - fee
+        - bidet
+    CreateAuditBody:
+      type: object
+      required: [restroomId, restroomName, latitude, longitude, pwdAccessible, hasSoap, hasToiletSeat, hasTissue, hasFunctionalBidet]
+      properties:
+        restroomId:
+          type: integer
+        restroomName:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        pwdAccessible:
+          type: boolean
+        hasSoap:
+          type: boolean
+        hasToiletSeat:
+          type: boolean
+        hasTissue:
+          type: boolean
+        hasFunctionalBidet:
+          type: boolean
+        remarks:
+          type: [string, 'null']
+    AuditRecord:
+      type: object
+      required: [id, userId, restroomId, restroomName, latitude, longitude, pwdAccessible, hasSoap, hasToiletSeat, hasTissue, hasFunctionalBidet, tierStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        restroomId:
+          type: integer
+        restroomName:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        pwdAccessible:
+          type: boolean
+        hasSoap:
+          type: boolean
+        hasToiletSeat:
+          type: boolean
+        hasTissue:
+          type: boolean
+        hasFunctionalBidet:
+          type: boolean
+        remarks:
+          type: [string, 'null']
+        tierStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AuditSummaryMap:
+      type: object
+      additionalProperties:
+        type: object
+        required: [count, audits]
+        properties:
+          count:
+            type: integer
+          audits:
+            type: array
+            items:
+              $ref: '#/components/schemas/AuditRecord'
     AuthUser:
       type: object
       required: [id, email, firstName, lastName, profileImageUrl]
