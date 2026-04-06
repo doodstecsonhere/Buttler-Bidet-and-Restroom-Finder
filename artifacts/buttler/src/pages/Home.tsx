@@ -4,8 +4,9 @@ import { useGeolocation } from "@/hooks/use-geolocation";
 import { calculateDistance } from "@/lib/distance";
 import { Map } from "@/components/Map";
 import { BidetCard } from "@/components/BidetCard";
-import { MapPinOff, Loader2, Sparkles } from "lucide-react";
+import { MapPinOff, Loader2, Sparkles, LogIn, LogOut, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@workspace/replit-auth-web";
 
 // Default to Dumaguete City center if geolocation fails
 const DUMAGUETE_CENTER: [number, number] = [9.317, 123.305];
@@ -13,6 +14,7 @@ const DUMAGUETE_CENTER: [number, number] = [9.317, 123.305];
 export default function Home() {
   const { data: bidets, isLoading: bidetsLoading, error: bidetsError } = useGetBidets();
   const { location, loading: geoLoading, error: geoError } = useGeolocation();
+  const { user, isAuthenticated, login, logout } = useAuth();
 
   const sortedBidets = useMemo(() => {
     if (!bidets) return [];
@@ -37,10 +39,28 @@ export default function Home() {
       <div className="md:hidden absolute top-0 left-0 w-full z-10 pointer-events-none p-4">
         <div className="bg-white/80 backdrop-blur-md border border-white/40 shadow-lg rounded-2xl p-4 flex items-center gap-3 pointer-events-auto">
           <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Buttler Logo" className="w-10 h-10 rounded-xl" />
-          <div>
+          <div className="flex-1">
             <h1 className="font-display font-bold text-xl text-foreground leading-none">Buttler</h1>
             <p className="text-primary font-medium text-xs tracking-wide uppercase">Bidet Finder</p>
           </div>
+          {isAuthenticated ? (
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-xl hover:bg-white/80"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline max-w-[80px] truncate">{user?.firstName ?? "Account"}</span>
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={login}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Log in
+            </button>
+          )}
         </div>
       </div>
 
@@ -58,13 +78,42 @@ export default function Home() {
         {/* Desktop Header */}
         <div className="hidden md:flex items-center gap-4 p-6 border-b border-border/60 bg-card">
           <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Buttler Logo" className="w-12 h-12 rounded-xl shadow-sm" />
-          <div>
+          <div className="flex-1">
             <h1 className="font-display font-bold text-2xl text-foreground">Buttler</h1>
             <p className="text-primary font-medium text-sm flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
               Bidet Finder
             </p>
           </div>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              {user?.profileImageUrl ? (
+                <img src={user.profileImageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+              )}
+              <div className="text-sm">
+                <p className="font-medium text-foreground leading-none">{user?.firstName ?? "User"}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="ml-1 flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-xl hover:bg-muted"
+              >
+                <LogOut className="w-4 h-4" />
+                Log out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={login}
+              className="flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors px-4 py-2 rounded-xl shadow-sm"
+            >
+              <LogIn className="w-4 h-4" />
+              Log in
+            </button>
+          )}
         </div>
 
         {/* List Header */}

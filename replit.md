@@ -27,7 +27,8 @@ artifacts-monorepo/
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
+│   ├── db/                 # Drizzle ORM schema + DB connection
+│   └── replit-auth-web/    # useAuth() hook for browser OIDC auth state
 ├── scripts/                # Utility scripts (single workspace package)
 │   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
 ├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
@@ -40,13 +41,15 @@ artifacts-monorepo/
 
 ### Buttler: Bidet Finder (`artifacts/buttler`)
 
-React + Vite app served at `/`. Finds the nearest bidet-equipped locations in Dumaguete, Philippines.
+React + Vite PWA served at `/`. Finds the nearest bidet-equipped locations in Dumaguete, Philippines.
 
-- Map with all 26 bidet locations using Leaflet + OpenStreetMap
+- Map with all 92 bidet locations using Leaflet + OpenStreetMap
 - Geolocation-based distance sorting (nearest first)
 - "Get Directions" button opens Google Maps navigation
 - Uses `useGetBidets` hook from `@workspace/api-client-react`
 - Data comes from `GET /api/bidets`
+- PWA with offline support via vite-plugin-pwa and Workbox
+- Replit Auth (OIDC) login/logout via `useAuth()` from `@workspace/replit-auth-web`
 
 ## TypeScript & Composite Projects
 
@@ -68,9 +71,12 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
 
 - Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Routes: `src/routes/bidets.ts` exposes `GET /bidets` — returns all 26 bidet locations
+- App setup: `src/app.ts` — mounts CORS (credentials: true), cookie-parser, authMiddleware, routes at `/api`
+- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /healthz`
+- Routes: `src/routes/bidets.ts` exposes `GET /bidets` — returns all 92 bidet locations
+- Routes: `src/routes/auth.ts` — OIDC login/callback/logout + `GET /auth/user`
+- Auth: `src/lib/auth.ts` — session CRUD, OIDC config, user upsert (openid-client v6)
+- Middleware: `src/middlewares/authMiddleware.ts` — loads session user on every request
 - Depends on: `@workspace/db`, `@workspace/api-zod`
 - `pnpm --filter @workspace/api-server run dev` — run the dev server
 - `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
