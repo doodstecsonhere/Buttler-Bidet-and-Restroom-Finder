@@ -37,9 +37,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icons/*.png", "images/**/*"],
       manifest: {
-        name: "Buttler: Bidet Finder",
+        name: "Buttler: Bidet & Restroom Finder",
         short_name: "Buttler",
-        description: "Find the nearest bidet-equipped locations in Dumaguete City, Philippines.",
+        description: "Find the nearest bidet-equipped and public restroom locations in Dumaguete City, Philippines.",
         theme_color: "#38bdf8",
         background_color: "#ffffff",
         display: "standalone",
@@ -63,6 +63,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Prevent the service worker from intercepting API routes.
+        // This is critical: /api/* paths (login, callback, logout) must
+        // reach the Express server directly — the SW must never serve
+        // a cached page in their place.
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/[a-z]\.basemaps\.cartocdn\.com\/.*/i,
@@ -76,10 +82,10 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /\/api\/bidets/,
+            urlPattern: /\/api\/restrooms/,
             handler: "NetworkFirst",
             options: {
-              cacheName: "bidet-data",
+              cacheName: "restroom-data",
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24,
@@ -123,10 +129,25 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    // Proxy all /api/* requests to the Express API server in development.
+    // This ensures /api/login, /api/callback, /api/logout etc. reach Express
+    // even without relying solely on the Replit platform proxy.
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
   },
 });
