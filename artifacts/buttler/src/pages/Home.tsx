@@ -101,6 +101,7 @@ export default function Home() {
         <Map
           restrooms={filteredRestrooms}
           userLocation={location}
+          geoError={geoError}
           defaultCenter={DUMAGUETE_CENTER}
           auditedIds={auditedIds}
           isAuthenticated={isAuthenticated}

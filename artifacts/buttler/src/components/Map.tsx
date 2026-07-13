@@ -19,13 +19,14 @@ export interface Restroom {
 interface MapProps {
   restrooms: Restroom[];
   userLocation: Location | null;
+  geoError?: string | null;
   defaultCenter: [number, number];
   auditedIds: Set<number>;
   isAuthenticated: boolean;
   onAuditClick: (restroom: Restroom) => void;
 }
 
-// ─── Icons ─────────────────────────────────────────────────────────────────
+// ─── Icons ───────────────────────────────────────────────────────────────────
 
 const dropSvg = (color: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="${color}" stroke="none"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`;
@@ -42,12 +43,12 @@ function makeIcon(color: string, borderColor: string, audited: boolean) {
   });
 }
 
-const bidetIcon = makeIcon('#d97706', '#d97706', false);
+const bidetIcon       = makeIcon('#d97706', '#d97706', false);
 const bidetAuditedIcon = makeIcon('#d97706', '#d97706', true);
-const noDropIcon = makeIcon('#64748b', '#94a3b8', false);
+const noDropIcon       = makeIcon('#64748b', '#94a3b8', false);
 const noDropAuditedIcon = makeIcon('#64748b', '#94a3b8', true);
 
-// Pulsing green dot — strictly required per spec to stand out against gold/blue-gray markers.
+// Pulsing green dot — strictly required to stand out against gold/blue-gray markers.
 const greenUserIcon = L.divIcon({
   className: 'bg-transparent border-none',
   html: `
@@ -61,7 +62,7 @@ const greenUserIcon = L.divIcon({
   popupAnchor: [0, -16],
 });
 
-// Inject the keyframe animation once into the document head.
+// Inject keyframes once.
 if (typeof document !== 'undefined' && !document.getElementById('buttler-pulse-style')) {
   const style = document.createElement('style');
   style.id = 'buttler-pulse-style';
@@ -83,42 +84,34 @@ if (typeof document !== 'undefined' && !document.getElementById('buttler-pulse-s
   document.head.appendChild(style);
 }
 
-// ─── Map bounds fitter (fires once on first data load) ──────────────────────
+// ─── Locate control (FAB + auto-startup + green dot + toast) ─────────────────
+//
+// Single component owns the entire "where is the user" concern:
+//   • On startup: watches the autoLocation / autoError props. The very first
+//     time either resolves it fires the viewport ONCE and locks the hasFit ref.
+//   • FAB tap: always re-runs geolocation and flies to the new position.
+//
+// Nothing here touches the 1168 restroom markers — they live in a sibling
+// subtree so only the green dot Marker re-renders on position change.
 
-function MapBounds({ restrooms, userLocation, defaultCenter }: {
-  restrooms: Restroom[];
-  userLocation: Location | null;
-  defaultCenter: [number, number];
-}) {
-  const map = useMap();
-  const hasFit = useRef(false);
+const LOCATE_MSG = 'Location access needed to show user location.';
+const STARTUP_ZOOM = 17;
+const FALLBACK_ZOOM = 15;
 
-  useEffect(() => {
-    if (hasFit.current) return;
-    if (!restrooms || restrooms.length === 0) {
-      map.setView(defaultCenter, 14);
-      return;
-    }
-    hasFit.current = true;
-    const bounds = L.latLngBounds(restrooms.map(r => [r.latitude, r.longitude]));
-    if (userLocation) bounds.extend([userLocation.lat, userLocation.lng]);
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
-  }, [restrooms, userLocation, map, defaultCenter]);
-
-  return null;
+interface LocateButtonProps {
+  autoLocation: Location | null;
+  autoError?: string | null;
+  fallbackCenter: [number, number];
 }
 
-// ─── FAB: "Show Your Location" ──────────────────────────────────────────────
-// Rendered via portal into the Leaflet map container so it never causes
-// re-renders of the 1168 restroom markers.
-
-const LOCATE_ERROR_MSG = 'Location access needed to show user location.';
-
-function LocateButton() {
+function LocateButton({ autoLocation, autoError, fallbackCenter }: LocateButtonProps) {
   const map = useMap();
   const [locatedPos, setLocatedPos] = useState<[number, number] | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+
+  // hasFit: ensures auto-centering fires exactly once on initial load.
+  const hasFit = useRef(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -127,24 +120,37 @@ function LocateButton() {
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   }, []);
 
+  // ── Auto-locate on startup ────────────────────────────────────────────────
+  useEffect(() => {
+    if (hasFit.current) return;
+    if (!autoLocation) return;
+    hasFit.current = true;
+    const coords: [number, number] = [autoLocation.lat, autoLocation.lng];
+    setLocatedPos(coords);
+    map.flyTo(coords, STARTUP_ZOOM, { animate: true, duration: 1.0 });
+  }, [autoLocation, map]);
+
+  useEffect(() => {
+    if (hasFit.current) return;
+    if (!autoError) return;
+    // Only trigger fallback once geolocation has definitively failed.
+    hasFit.current = true;
+    map.setView(fallbackCenter, FALLBACK_ZOOM);
+    showToast(LOCATE_MSG);
+  }, [autoError, fallbackCenter, map, showToast]);
+
+  // ── FAB tap ───────────────────────────────────────────────────────────────
   const handleLocate = useCallback(() => {
-    if (!navigator.geolocation) {
-      showToast(LOCATE_ERROR_MSG);
-      return;
-    }
+    if (!navigator.geolocation) { showToast(LOCATE_MSG); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setLocatedPos(coords);
         setLocating(false);
-        // Smooth fly-to; zoom 17 gives a tight neighbourhood view.
-        map.flyTo(coords, 17, { animate: true, duration: 1.2 });
+        map.flyTo(coords, STARTUP_ZOOM, { animate: true, duration: 1.2 });
       },
-      () => {
-        setLocating(false);
-        showToast(LOCATE_ERROR_MSG);
-      },
+      () => { setLocating(false); showToast(LOCATE_MSG); },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   }, [map, showToast]);
@@ -153,7 +159,7 @@ function LocateButton() {
 
   return (
     <>
-      {/* FAB — portaled into the Leaflet container so it sits in the map DOM hierarchy */}
+      {/* FAB — portaled into Leaflet container, never triggers restroom re-render */}
       {createPortal(
         <button
           onClick={handleLocate}
@@ -180,34 +186,15 @@ function LocateButton() {
           }}
         >
           {locating ? (
-            /* Spinner while acquiring GPS */
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#22c55e"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ animation: 'buttler-spin 1s linear infinite' }}
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ animation: 'buttler-spin 1s linear infinite' }}>
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
             </svg>
           ) : (
-            /* GPS crosshair / location target icon */
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={locatedPos ? '#22c55e' : '#374151'}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke={locatedPos ? '#22c55e' : '#374151'}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 1v4M12 19v4M1 12h4M19 12h4" />
             </svg>
@@ -216,34 +203,23 @@ function LocateButton() {
         container,
       )}
 
-      {/* Toast — portaled into document.body so it floats above everything */}
-      {toast &&
-        createPortal(
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 24,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 99999,
-              background: 'rgba(17,24,39,0.92)',
-              color: 'white',
-              fontSize: 13,
-              fontWeight: 500,
-              padding: '10px 18px',
-              borderRadius: 10,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-              animation: 'buttler-fadein 0.2s ease',
-            }}
-          >
-            {toast}
-          </div>,
-          document.body,
-        )}
+      {/* Toast — portaled to document.body, above everything */}
+      {toast && createPortal(
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%',
+          transform: 'translateX(-50%)', zIndex: 99999,
+          background: 'rgba(17,24,39,0.92)', color: 'white',
+          fontSize: 13, fontWeight: 500, padding: '10px 18px',
+          borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+          whiteSpace: 'nowrap', pointerEvents: 'none',
+          animation: 'buttler-fadein 0.2s ease',
+        }}>
+          {toast}
+        </div>,
+        document.body,
+      )}
 
-      {/* Green pulsing dot marker — only re-renders this single marker, not the 1168 restrooms */}
+      {/* Green pulsing dot — only this Marker re-renders on position change */}
       {locatedPos && (
         <Marker position={locatedPos} icon={greenUserIcon} zIndexOffset={1000}>
           <Popup className="font-sans">
@@ -258,7 +234,7 @@ function LocateButton() {
   );
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function accessLabel(access: string) {
   if (access === 'public') return { label: 'Public', color: '#22c55e' };
@@ -275,11 +251,22 @@ function feeLabel(fee: string) {
 
 // ─── Main Map component ───────────────────────────────────────────────────────
 
-export function Map({ restrooms, userLocation, defaultCenter, auditedIds, isAuthenticated, onAuditClick }: MapProps) {
+export function Map({
+  restrooms,
+  userLocation,
+  geoError,
+  defaultCenter,
+  auditedIds,
+  isAuthenticated,
+  onAuditClick,
+}: MapProps) {
   return (
+    // Initial center = downtown Dumaguete at zoom 15.
+    // LocateButton will immediately fly to the user if geolocation resolves,
+    // or stay here if it fails — no fitBounds over all 1168 pins ever fires.
     <MapContainer
-      center={userLocation ? [userLocation.lat, userLocation.lng] : defaultCenter}
-      zoom={14}
+      center={defaultCenter}
+      zoom={15}
       className="w-full h-full z-0"
       zoomControl={false}
     >
@@ -288,10 +275,12 @@ export function Map({ restrooms, userLocation, defaultCenter, auditedIds, isAuth
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
       />
 
-      <MapBounds restrooms={restrooms} userLocation={userLocation} defaultCenter={defaultCenter} />
-
-      {/* FAB + green dot + toast — all isolated from restroom rendering */}
-      <LocateButton />
+      {/* Single component owns all user-location logic */}
+      <LocateButton
+        autoLocation={userLocation}
+        autoError={geoError}
+        fallbackCenter={defaultCenter}
+      />
 
       {restrooms.map((restroom) => {
         const audited = auditedIds.has(restroom.id);
@@ -352,7 +341,6 @@ export function Map({ restrooms, userLocation, defaultCenter, auditedIds, isAuth
                   >
                     Get Directions →
                   </a>
-
                   {isAuthenticated && (
                     <button
                       onClick={() => onAuditClick(restroom)}
