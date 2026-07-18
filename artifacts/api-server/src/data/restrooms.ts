@@ -306,7 +306,6 @@ export const RESTROOMS: Restroom[] = [
   { id: 305, name: 'De Lite Commercial', latitude: 9.3075214, longitude: 123.3056699, address: null, access: 'customers', fee: 'no', bidet: false },
   { id: 306, name: 'Dekada', latitude: 9.3066309, longitude: 123.3100069, address: 'Rizal Boulevard', access: 'customers', fee: 'no', bidet: false },
   { id: 307, name: 'Derm Corner', latitude: 9.3091436, longitude: 123.308741, address: null, access: 'customers', fee: 'no', bidet: true },
-  { id: 308, name: 'Derm Corner', latitude: 9.309366, longitude: 123.307717, address: 'Governor M. F. Perdices Street', access: 'public', fee: 'no', bidet: false },
   { id: 309, name: 'Dexter\'s Pizza', latitude: 9.3087912, longitude: 123.308864, address: null, access: 'customers', fee: 'no', bidet: false },
   { id: 310, name: 'Diesel Power Parts Center/ Sentro (Dumaguete)', latitude: 9.2991979, longitude: 123.3026167, address: null, access: 'customers', fee: 'no', bidet: false },
   { id: 311, name: 'Digital One', latitude: 9.308274, longitude: 123.3075461, address: 'Governor M. F. Perdices Street', access: 'customers', fee: 'no', bidet: false },
