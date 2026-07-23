@@ -35,6 +35,10 @@ export function AuditModal({ restroom, onClose, onSuccess }: AuditModalProps) {
     setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleSubmit = async () => {
+    if (!navigator.onLine) {
+      setError("You're offline. Please reconnect to submit an audit.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

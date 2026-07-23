@@ -1,12 +1,13 @@
 import { useMemo, useState, useCallback } from "react";
-import { useGetRestrooms, useGetAudits } from "@workspace/api-client-react";
+import { useGetAudits } from "@workspace/api-client-react";
+import { useOfflineRestrooms } from "@/hooks/use-offline-restrooms";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { calculateDistance } from "@/lib/distance";
 import { Map } from "@/components/Map";
 import type { Restroom } from "@/components/Map";
 import { RestroomCard } from "@/components/RestroomCard";
 import { AuditModal } from "@/components/AuditModal";
-import { MapPinOff, Loader2, Sparkles, Search, Droplets, Users, LogIn, LogOut, User, X } from "lucide-react";
+import { MapPinOff, Loader2, Sparkles, Search, Droplets, Users, LogIn, LogOut, User, X, WifiOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const DUMAGUETE_CENTER: [number, number] = [9.317, 123.305];
 
 export default function Home() {
-  const { data: restrooms, isLoading: restroomsLoading, error: restroomsError } = useGetRestrooms();
+  const { data: restrooms, isLoading: restroomsLoading, error: restroomsError, isFromCache } = useOfflineRestrooms();
   const { data: auditsMap, queryKey: auditsQueryKey } = useGetAudits();
   const { location, loading: geoLoading, error: geoError } = useGeolocation();
   const { user, isAuthenticated, login, logout } = useAuth();
@@ -195,6 +196,13 @@ export default function Home() {
             <div className="p-3 bg-accent/10 border border-accent/20 rounded-2xl flex gap-3 text-sm text-foreground/80">
               <MapPinOff className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <p>Couldn't get your location. Showing all restrooms instead.</p>
+            </div>
+          )}
+
+          {isFromCache && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3 text-sm text-amber-800">
+              <WifiOff className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <p>You're offline — showing cached restroom data. Search and filters still work.</p>
             </div>
           )}
 

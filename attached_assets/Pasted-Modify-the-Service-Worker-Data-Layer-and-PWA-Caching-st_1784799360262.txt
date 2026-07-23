@@ -1,0 +1,24 @@
+Modify the Service Worker, Data Layer, and PWA Caching strategy for "Buttler: Bidet & Restroom Finder" to make the app fully functional offline.
+
+Execute the following technical updates to ensure all map pins, restrooms, and search capabilities work seamlessly without an internet connection:
+
+1. Offline Data Caching & Local Storage
+- Pre-cache Static Assets: Update the Service Worker (sw.js / Workbox configuration) to explicitly pre-cache Dumaguete Comprehensive Restroom Data.csv (or the parsed JSON dataset), manifest.json, map pin icons, and all core bundle assets during the install phase.
+- Client-Side Data Persistence: On app startup (or first online load), parse the CSV dataset and store the full array of restroom and bidet records into localStorage or IndexedDB.
+- Offline Data Fallback: Update the map's data-fetching logic so that if a network request fails or navigator.onLine is false, the app instantly falls back to reading the restroom and bidet records directly from localStorage/IndexedDB.
+
+2. Offline Search & Filtering
+- Ensure the text search bar (Name/Address filtering) and the filter toggles ("Bidets Only", "Public Only") operate directly against the in-memory/locally cached array of restrooms rather than querying an external API server.
+- The map pins, popups, and full search results MUST render identically whether the user is online or offline.
+
+3. Service Worker Strategy & Offline Map Tiles
+- Implement a Cache-First or Stale-While-Revalidate strategy for static data assets and local application routes.
+- Map Tile Caching: Enable tile caching for Leaflet/Mapbox (e.g., using leaflet-offline or Service Worker runtime caching for OpenStreetMap tile URLs) for tile requests at Zoom Levels 15–18 covering Dumaguete City, allowing already viewed map tiles to render while offline.
+- Ensure grace handling for auth-gated features: If offline, disable the "Audit this Restroom" submission gracefully with a UI toast stating: "Location access needed to show user location." (or queue the submission in IndexedDB to sync when navigator.onLine becomes true).
+
+4. Verification Checklist
+- Verify that turning on Flight Mode / disabling network in DevTools still allows:
+  1. The app shell to load instantly.
+  2. Map pins (both Gold bidets and Blue-Gray standard restrooms) to load and render on the map.
+  3. Search and filter toggles to update visible pins instantly.
+  4. Restroom detail popups to display all metadata (Access, Fee, Bidet status).
